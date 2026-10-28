@@ -1,0 +1,78 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  # Weekly, so the build-time GitHub snapshot stays current without a push
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      # Nothing deploys unless lint, types, and tests pass (includes the splash-screen guard test)
+      - name: Format check
+        run: npm run format:check
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run type-check
+      - name: Test
+        run: npm run test:run
+      - name: Build
+        run: npm run build
+        env:
+          # Lets the build-time GitHub snapshot use the higher authenticated rate limit
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PostHog project key (public by design). Set it under Settings > Secrets and variables >
+          # Actions > Variables. Unset means analytics is left out of the build entirely.
+          VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
+          # Optional, same place (e.g. https://eu.i.posthog.com). Empty uses the code's default host.
+          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
+      # Browser smoke test of the real build: blocks a deploy that builds but renders a blank or broken page
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Smoke test production build
+        run: npm run test:e2e
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
