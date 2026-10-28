@@ -1,0 +1,116 @@
+import { useEffect, useState } from "react";
+import { ArrowUp } from "lucide-react";
+import { useSmoothScroll } from "@/context/smoothScroll";
+import { hasKeyboardAndPointer, isMacPlatform } from "@/lib/shortcuts";
+import { PROFILE, SOCIALS } from "@/data/profile";
+import ScrambleNumber from "@/components/ui/ScrambleNumber";
+import { ExternalLink, HoverArrow } from "@/components/ui/ExternalLink";
+import { setMotionOff, useMotionOff } from "@/lib/motionPreference";
+
+const LINKS = [...SOCIALS, { label: "Résumé", href: `${import.meta.env.BASE_URL}${PROFILE.resume}` }];
+
+const kbd =
+  "inline-flex h-6 min-w-6 items-center justify-center rounded-sm border border-line px-1.5 font-mono text-[13px] leading-none text-snow/80";
+
+/**
+ * Footer: wordmark, the social links, scroll to top, then copyright, then the name at
+ * wordmark scale, filled with a dot matrix and clipped by the bottom of the page.
+ */
+const Footer = () => {
+  const { lenis } = useSmoothScroll();
+  const [mod, setMod] = useState<string | null>(null);
+  const motionOff = useMotionOff();
+  useEffect(() => {
+    if (hasKeyboardAndPointer()) setMod(isMacPlatform() ? "⌘" : "Ctrl");
+  }, []);
+  const backToTop = () => {
+    if (lenis) lenis.scrollTo(0, { duration: 1.2 });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <footer data-reveal-skip className="theme-dark relative bg-night text-snow overflow-hidden">
+      <div aria-hidden="true" className="grain absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-screen" />
+
+      <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 lg:px-12">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 py-8 border-t border-line">
+          <button type="button" onClick={backToTop} className="t-heading text-2xl flex items-baseline gap-1.5">
+            {PROFILE.first} <span className="text-muted">{PROFILE.last}</span>
+            <span className="t-figure text-[12px] text-muted -translate-y-2" aria-hidden="true">
+              ©
+            </span>
+          </button>
+          <ul className="flex flex-wrap items-center gap-6">
+            {LINKS.map((l) => (
+              <li key={l.label}>
+                <ExternalLink
+                  href={l.href}
+                  className="group inline-flex items-center gap-1 py-3 -my-3 text-[13px] font-medium uppercase tracking-[0.03em] text-snow/70 hover:text-snow transition-colors duration-fast"
+                >
+                  {l.label}
+                  {/* An SVG, not the ↗ character: iOS draws that as a blue emoji */}
+                  <HoverArrow />
+                </ExternalLink>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={backToTop}
+            className="py-3 -my-3 inline-flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.03em] text-snow/70 hover:text-snow transition-colors duration-fast"
+          >
+            Scroll to top <ArrowUp className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 py-6 border-t border-line">
+          <p className="text-sm text-muted">
+            © <ScrambleNumber value={String(new Date().getFullYear())} /> {PROFILE.name}. {PROFILE.title},{" "}
+            {PROFILE.city.split(",")[0]}.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 t-figure text-xs text-muted">
+            {mod && (
+              <p className="hidden lg:flex items-center gap-2">
+                <kbd className={kbd}>{mod} K</kbd> quick menu <span className="opacity-40">·</span>{" "}
+                <kbd className={kbd}>`</kbd> terminal
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => setMotionOff(!motionOff)}
+              aria-pressed={motionOff}
+              className="py-3 -my-3 inline-flex items-center gap-2 hover:text-snow transition-colors duration-fast"
+            >
+              <span
+                aria-hidden="true"
+                className={`relative h-3.5 w-6 rounded-pill border border-line ${motionOff ? "bg-transparent" : "bg-emerald-400/80"}`}
+              >
+                <span
+                  className={`absolute top-0.5 h-2 w-2 rounded-full bg-snow transition-transform duration-fast ${motionOff ? "left-0.5" : "left-0.5 translate-x-2.5"}`}
+                />
+              </span>
+              Animations {motionOff ? "off" : "on"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* The name, dot-matrix filled, cut by the bottom edge of the page */}
+      <div aria-hidden="true" className="relative h-[22vw] md:h-[26vw] lg:h-[24vw] overflow-hidden select-none">
+        <span
+          className="absolute left-1/2 -translate-x-1/2 top-[0.02em] font-body font-semibold tracking-[-0.05em] leading-[0.86] whitespace-nowrap text-[25vw] md:text-[29vw] lg:text-[27vw] text-transparent bg-clip-text"
+          style={DOTS}
+        >
+          {PROFILE.first}
+        </span>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
+
+const DOTS = {
+  backgroundImage: "radial-gradient(circle at center, hsl(0 0% 100% / 0.2) 0.9px, transparent 1.2px)",
+  backgroundSize: "6px 6px",
+  WebkitTextStroke: "1px hsl(0 0% 100% / 0.05)",
+} as const;

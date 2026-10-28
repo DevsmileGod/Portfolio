@@ -1,0 +1,86 @@
+import { lazy, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import Hero from "@/components/Hero";
+import Footer from "@/components/Footer";
+import { LazySection } from "@/components/ui/LazySection";
+import { DUR } from "@/lib/motion";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+import SEO from "@/components/SEO";
+import { PROFILE } from "@/data/profile";
+
+const WorkSection = lazy(() => import("@/components/WorkSection"));
+const FocusSection = lazy(() => import("@/components/FocusSection"));
+const AboutSection = lazy(() => import("@/components/AboutSection"));
+const ServicesSection = lazy(() => import("@/components/ServicesSection"));
+const VisionSection = lazy(() => import("@/components/VisionSection"));
+const ExperienceSection = lazy(() => import("@/components/ExperienceSection"));
+const OpenSourceSection = lazy(() => import("@/components/OpenSourceSection"));
+const ContactSection = lazy(() => import("@/components/ContactSection"));
+
+/** Home: hero, belief, who, work, what I build, principles, experience, updates, contact. */
+const Index = () => {
+  const root = useRef<HTMLDivElement>(null);
+  useScrollReveal(root);
+
+  // Back from a project page (/?scrollTo=repo): jump to Open source so it mounts and can then
+  // centre that repo's row, instead of waiting at the hero until the visitor scrolls there.
+  // One instant jump: the section's own effect does the final, precise one.
+  const { search } = useLocation();
+  const [returning] = useState(() => new URLSearchParams(search).has("scrollTo"));
+  useEffect(() => {
+    if (returning) document.getElementById("open-source")?.scrollIntoView({ behavior: "instant", block: "start" });
+    // Once, on arrival
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <motion.div
+      ref={root}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: DUR.base }}
+      className="bg-night"
+    >
+      <SEO />
+      <main id="main-content" tabIndex={-1} className="relative z-10 outline-none">
+        <Hero />
+        {/* Reserved heights are the sections' measured heights (desktop, then phone) so the page
+            doesn't shift as they mount; re-measure when a section's layout changes */}
+        <LazySection minHeight="320vh">
+          <FocusSection />
+        </LazySection>
+        <LazySection sectionId="about" minHeight="calc(1823px + 130vh)" minHeightMobile="3096px">
+          <AboutSection />
+        </LazySection>
+        <LazySection sectionId="work" minHeight="calc(661px + 950vh)" minHeightMobile="calc(565px + 950vh)">
+          <WorkSection />
+        </LazySection>
+        <LazySection sectionId="services" minHeight="calc(616px + 600vh)" minHeightMobile="4629px">
+          <ServicesSection />
+        </LazySection>
+        <LazySection sectionId="vision" minHeight="580vh">
+          <VisionSection />
+        </LazySection>
+        <LazySection sectionId="experience" minHeight="calc(4215px + 860vh)" minHeightMobile="calc(3855px + 860vh)">
+          <ExperienceSection />
+        </LazySection>
+        {/* The public repos, once a GitHub username is set in src/data/profile.ts */}
+        {PROFILE.githubUser && (
+          <LazySection sectionId="open-source" minHeight="2573px" minHeightMobile="2450px">
+            <OpenSourceSection />
+          </LazySection>
+        )}
+        <LazySection sectionId="contact" minHeight="320vh">
+          <ContactSection />
+        </LazySection>
+      </main>
+      <div className="relative z-10">
+        <Footer />
+      </div>
+    </motion.div>
+  );
+};
+
+export default Index;

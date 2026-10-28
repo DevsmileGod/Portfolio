@@ -1,0 +1,200 @@
+import { motion, useReducedMotionConfig, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { useRef } from "react";
+import { PROFILE } from "@/data/profile";
+import { clamp01 } from "@/lib/format";
+import { Portrait } from "./ui/Portrait";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+/** The card the full-screen panel shrinks into */
+const CARD_W = "min(520px, 86vw)";
+const CARD_H = "min(760px, 82vh)";
+
+const years = Math.floor((Date.now() - PROFILE.careerStart.getTime()) / (365.25 * 24 * 3600 * 1000));
+
+/** Real figures only, from the résumé, placed around the card: left column top-down, then right */
+const STATS = [
+  { value: `${years}+`, label: "Years taking ML to production", side: "left", top: "16%" },
+  { value: "30+", label: "Perception models on in-vehicle AI chips", side: "left", top: "46%" },
+  // The same 30% step as the left pair (16% → 46%), measured up from the last figure below it
+  {
+    value: "3.2×",
+    label: "Lower inference latency with INT8",
+    side: "right",
+    bottom: `calc(50% - ${CARD_H} / 2 + 30%)`,
+  },
+  // Sits on the card's bottom edge: its last line lines up with the card's foot
+  {
+    value: "600+",
+    label: "Engineers using the RAG assistant I built",
+    side: "right",
+    bottom: `calc(50% - ${CARD_H} / 2)`,
+  },
+] as const;
+
+/**
+ * What I believe, after lesmana.framer.website's "Why us": a dark panel fills the screen
+ * with the belief and the image inside it, then closes in around them as you scroll until it is a
+ * card on a pale ground with a faint grid, and the figures surface around it one by one.
+ */
+const FocusSection = () => {
+  const reduceMotion = useReducedMotionConfig();
+  const wide = useMediaQuery("(min-width: 1024px)");
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress: p } = useScroll({ target: ref, offset: ["start start", "end end"] });
+
+  // 0 = full screen, 1 = the card. Function transforms keep these on the JS path.
+  const shrink = useTransform(p, (v) => (reduceMotion ? 1 : clamp01((v - 0.08) / 0.4)));
+  const clipPath = useTransform(
+    shrink,
+    (k) => `inset(calc((100% - ${CARD_H}) / 2 * ${k}) calc((100% - ${CARD_W}) / 2 * ${k}))`,
+  );
+
+  // Phones and tablets: the shrink has nothing to shrink into (the card is the screen's width),
+  // so the card simply sits on the pale ground with the four figures in a grid beneath it
+  if (!wide) {
+    return (
+      <section
+        aria-label="A line about how I work"
+        data-glass-off
+        className="relative bg-pale px-6 md:px-10 py-16 md:py-24"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 [background-image:linear-gradient(hsl(var(--pale-grid)/0.07)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--pale-grid)/0.07)_1px,transparent_1px)] [background-size:28px_28px]"
+        />
+        <div className="relative max-w-[560px] mx-auto">
+          <div className="bg-night text-snow rounded-sm p-8 md:p-11 flex flex-col">
+            <p className="flex items-center gap-2 font-mono text-[12px] md:text-[13px] uppercase tracking-[0.16em] text-emerald-400">
+              <span className="w-1 h-1 rounded-full bg-emerald-400" aria-hidden="true" />
+              What I believe
+            </p>
+            <h2 className="mt-5 t-statement text-[2.6rem] sm:text-[3rem] md:text-[4.4rem]">
+              I make models work where it matters.
+            </h2>
+            <div className="relative aspect-[4/5] my-6 md:my-8 rounded-sm overflow-hidden" aria-hidden="true">
+              <Portrait
+                variant="belief"
+                className="absolute inset-0 w-full h-full object-cover object-[50%_22%] grayscale contrast-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-transparent" />
+            </div>
+            <p className="text-[15px] leading-[1.55] text-snow/85">
+              Fast enough for the chip, accurate enough for the road, and simple enough for the next engineer to
+              maintain.
+            </p>
+            <p className="mt-4 font-signature text-[2.8rem] md:text-[3.4rem] leading-none text-snow">{PROFILE.first}</p>
+          </div>
+          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8">
+            {STATS.map((stat) => (
+              <div key={stat.label}>
+                <dd className="t-wordmark leading-none text-5xl md:text-6xl text-[hsl(160_45%_26%)]">{stat.value}</dd>
+                <dt className="mt-2 font-mono text-[13px] uppercase tracking-[0.16em] text-[hsl(160_15%_35%)]">
+                  {stat.label}
+                </dt>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      ref={ref}
+      aria-label="A line about how I work"
+      data-reveal-skip
+      data-glass-off
+      className={`relative ${reduceMotion ? "" : "h-[320vh]"}`}
+    >
+      <div className="sticky top-0 h-screen overflow-hidden bg-pale">
+        {/* Faint grid, strongest around the card */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 [background-image:linear-gradient(hsl(var(--pale-grid)/0.07)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--pale-grid)/0.07)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(45%_55%_at_50%_50%,black,transparent)] [-webkit-mask-image:radial-gradient(45%_55%_at_50%_50%,black,transparent)]"
+        />
+
+        {/* The figures */}
+        {STATS.map((stat, i) => (
+          <Stat key={stat.label} stat={stat} progress={p} index={i} still={!!reduceMotion} />
+        ))}
+
+        {/* The panel that becomes the card */}
+        <motion.div style={{ clipPath }} className="absolute inset-0 bg-night">
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col justify-between p-8 md:p-11 text-snow"
+            style={{ width: CARD_W, height: CARD_H }}
+          >
+            <div>
+              <p className="flex items-center gap-2 font-mono text-[12px] md:text-[13px] uppercase tracking-[0.16em] text-emerald-400">
+                <span className="w-1 h-1 rounded-full bg-emerald-400" aria-hidden="true" />
+                What I believe
+              </p>
+              <h2 className="mt-5 t-statement text-[3rem] md:text-[4.4rem]">I make models work where it matters.</h2>
+            </div>
+            {/* The image, in the open space between the belief and the signature (public/images/portrait-belief.*) */}
+            <div className="relative flex-1 min-h-0 my-6 md:my-8 rounded-sm overflow-hidden" aria-hidden="true">
+              <Portrait
+                variant="belief"
+                className="absolute inset-0 w-full h-full object-cover object-[50%_22%] grayscale contrast-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-transparent" />
+            </div>
+            <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+              <p className="font-signature text-[2.6rem] md:text-[3.4rem] leading-none text-snow -mb-2 shrink-0">
+                {PROFILE.first}
+              </p>
+              <p className="sm:text-right text-[14px] md:text-[15px] leading-[1.55] text-snow/85 sm:max-w-[230px]">
+                Fast enough for the chip, accurate enough for the road, and simple enough for the next engineer to
+                maintain.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+/** One figure beside the card: rises and sharpens into place once the card has formed */
+const Stat = ({
+  stat,
+  progress,
+  index,
+  still,
+}: {
+  stat: (typeof STATS)[number];
+  progress: MotionValue<number>;
+  index: number;
+  still: boolean;
+}) => {
+  const start = 0.5 + index * 0.08;
+  const t = useTransform(progress, (v) => (still ? 1 : clamp01((v - start) / 0.12)));
+  const opacity = useTransform(t, (k) => k);
+  const y = useTransform(t, (k) => (1 - k) * 40);
+  const gap = "clamp(16px, 3vw, 48px)";
+  const edge = `calc(50% + ${CARD_W} / 2 + ${gap})`;
+  // The room between the card's gap and the viewport edge, less a 24px inset, so labels wrap rather than touch the edge
+  const room = `calc((100% - ${CARD_W}) / 2 - ${gap} - 24px)`;
+  return (
+    <motion.div
+      style={{
+        opacity,
+        y,
+        ...("top" in stat ? { top: stat.top } : { bottom: stat.bottom }),
+        ...(stat.side === "left" ? { right: edge } : { left: edge }),
+        maxWidth: room,
+      }}
+      className={`absolute hidden lg:block ${stat.side === "left" ? "text-right" : "text-left"}`}
+    >
+      <p className="t-wordmark leading-none text-[clamp(3.4rem,6.5vw,6.5rem)] text-[hsl(160_45%_26%)]">{stat.value}</p>
+      <p
+        className={`mt-3 font-mono text-[13px] md:text-[12px] uppercase tracking-[0.2em] text-[hsl(160_15%_35%)] max-w-[260px] ${stat.side === "left" ? "ml-auto" : ""}`}
+      >
+        {stat.label}
+      </p>
+    </motion.div>
+  );
+};
+
+export default FocusSection;
