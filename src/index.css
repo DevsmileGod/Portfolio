@@ -1,0 +1,847 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens. One theme, one type family. A section picks its theme with
+ * `.theme-dark`; everything inside reads bg / fg / muted / line / tile
+ * from the theme, so components never hard-code a colour.
+ */
+@layer base {
+  :root {
+    /* Emerald: the only accent, used sparingly for status and focus */
+    --accent-100: 152 81% 96%;
+    --accent-200: 149 80% 90%;
+    --accent-300: 156 72% 67%;
+    --accent-400: 158 64% 52%;
+    --accent-500: 160 84% 39%;
+    --accent-900: 164 86% 16%;
+    --accent-950: 166 91% 9%;
+
+    /* Palette */
+    --night: 0 0% 0%;
+    --graphite: 0 0% 9%;
+    --snow: 0 0% 100%;
+    --stone: 0 0% 96%;
+    /* The pale ground shared by the belief, who-I-am and contact sections, and its inks */
+    --pale: 150 22% 95%;
+    --pale-ink: 160 45% 22%;
+    --pale-soft: 160 15% 40%;
+    --pale-grid: 160 30% 20%;
+
+    /* Default theme: dark */
+    --bg: var(--night);
+    --fg: var(--snow);
+    --muted: 0 0% 100% / 0.6;
+    --line: 0 0% 100% / 0.12;
+    --tile: var(--graphite);
+    --tile-fg: var(--snow);
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-fast: 200ms;
+    --dur-base: 400ms;
+    --dur-slow: 800ms;
+
+    /* Layered soft shadow under pill buttons */
+    --shadow-pill:
+      -1px 1px 0.5px hsl(0 0% 27% / 0.02), -3px 3px 1px hsl(0 0% 27% / 0.03), -6px 7px 2px hsl(0 0% 27% / 0.04),
+      -12px 13px 4px hsl(0 0% 27% / 0.05), -23px 25px 8px hsl(0 0% 27% / 0.06);
+
+    /* Used by the error screen (ErrorBoundary) */
+    --background: var(--night);
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --font-display: "Antonio", "Inter", sans-serif;
+    --font-body: "Inter", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+  }
+
+  .theme-dark {
+    --bg: var(--night);
+    --fg: var(--snow);
+    --muted: 0 0% 100% / 0.7;
+    --line: 0 0% 100% / 0.12;
+    --tile: var(--graphite);
+    --tile-fg: var(--snow);
+  }
+
+  /* No fixed height on html either: with overflow-x hidden it would become the scroll
+     container, which breaks position: sticky on phones where Lenis is off. */
+  html {
+    overflow-x: hidden;
+    /* Framer's scroll tracking measures targets against the scroll container; a positioned
+       html keeps offsets exact and silences its dev warning. */
+    position: relative;
+  }
+
+  body {
+    @apply bg-night text-snow antialiased;
+    font-family: var(--font-body);
+    font-weight: 400;
+    /* No overflow on body: it must not become a scroll container, or position: sticky
+       measures against it instead of the viewport and never pins on phones. */
+    min-height: 100%;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* One hairline grid under the whole page, fixed to the screen so it runs on unbroken from
+     section to section; any section without a background of its own sits on it. The scenes that
+     draw their own grid use the same cell, a twelfth of the width (a sixth on phones). It is its
+     own fixed layer, not a fixed background: browsers repaint a fixed background on every scroll
+     frame, a layer they just leave in place. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, hsl(0 0% 100% / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(0 0% 100% / 0.045) 1px, transparent 1px);
+    background-size: calc(100vw / 6) calc(100vw / 6);
+    transform: translateZ(0);
+  }
+  @media (min-width: 768px) {
+    body::before {
+      background-size: calc(100vw / 12) calc(100vw / 12);
+    }
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  /* With the custom cursor on, the system arrow hides; fields you type in keep the text cursor */
+  html.has-cursor,
+  html.has-cursor * {
+    cursor: none !important;
+  }
+  html.has-cursor :is(input, textarea, [contenteditable="true"]) {
+    cursor: text !important;
+  }
+
+  /* Nothing on the page can be selected, by the owner's choice; fields you type in still can */
+  html {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  ::selection {
+    background: hsl(var(--accent-500) / 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--accent-400));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Display voice: condensed, uppercase, tight. Wordmark, section titles, tile titles. */
+  .t-wordmark {
+    @apply font-display font-semibold uppercase leading-[0.9] tracking-[-0.01em];
+  }
+  .t-statement {
+    @apply font-display font-semibold uppercase leading-[0.95] tracking-[-0.005em];
+  }
+  .t-heading {
+    @apply font-display font-medium uppercase leading-[1] tracking-[0];
+  }
+  /* Slash label, the way the reference labels its sections: "/ Selected work" */
+  .t-label {
+    @apply font-body text-[14px] md:text-[15px] font-medium tracking-[-0.01em] text-fg;
+  }
+  .t-label::before {
+    content: "/ ";
+    @apply text-muted;
+  }
+  /* Uppercase support copy under headlines */
+  .t-caps {
+    @apply font-body text-[14px] md:text-[16px] font-medium uppercase leading-[1.55] tracking-[0.01em];
+  }
+  /* Body copy */
+  .t-body {
+    @apply font-body text-[16px] md:text-[17px] font-normal leading-[1.55] tracking-[-0.005em];
+  }
+  /* Figures: tabular mono for counters and dates */
+  .t-figure {
+    @apply font-mono tabular-nums;
+  }
+}
+
+/* The + after a figure: a slow breathing pulse with a sharp blink every few cycles */
+@keyframes plus-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  46% {
+    opacity: 0.25;
+  }
+  52% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+.plus-pulse {
+  display: inline-block;
+  transform-origin: center;
+  animation: plus-pulse 3.2s ease-in-out infinite;
+}
+
+/* "Open to opportunities": an emerald status light that blinks, with a ring that ripples out */
+@keyframes live-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes live-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: hsl(153 60% 55%);
+  box-shadow: 0 0 10px hsl(153 60% 55% / 0.8);
+  animation: live-blink 1.6s ease-in-out infinite;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: live-ring 1.6s ease-out infinite;
+}
+
+/* ── README, GitHub-rendered HTML in the site's type ──────────────────── */
+.readme {
+  font-family: var(--font-body);
+  color: hsl(0 0% 100% / 0.82);
+  line-height: 1.6;
+}
+/* README headings are demoted two levels in the markup (see lib/readmeHtml) and keep their
+   original level in data-h, so they are styled by that level; the bare tags cover any without it */
+.readme [data-h="1"],
+.readme [data-h="2"],
+.readme [data-h="3"],
+.readme h1:not([data-h]),
+.readme h2:not([data-h]),
+.readme h3:not([data-h]) {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  line-height: 1;
+  color: hsl(var(--snow));
+  margin: 2rem 0 0.9rem;
+}
+.readme [data-h="1"],
+.readme h1:not([data-h]) {
+  font-size: 2.6rem;
+  margin-top: 0;
+}
+.readme [data-h="2"],
+.readme h2:not([data-h]) {
+  font-size: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid hsl(var(--line));
+}
+.readme [data-h="3"],
+.readme h3:not([data-h]) {
+  font-size: 1.5rem;
+}
+.readme p,
+.readme ul,
+.readme ol,
+.readme table,
+.readme pre,
+.readme blockquote {
+  margin: 0 0 1rem;
+}
+.readme ul,
+.readme ol {
+  padding-left: 1.4rem;
+}
+.readme li {
+  margin: 0.3rem 0;
+}
+.readme a {
+  overflow-wrap: break-word;
+  color: hsl(var(--snow));
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--line));
+  text-underline-offset: 3px;
+}
+.readme a:hover {
+  text-decoration-color: hsl(var(--accent-400));
+}
+.readme code {
+  overflow-wrap: break-word;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: hsl(0 0% 100% / 0.06);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+.readme pre {
+  max-width: 100%;
+  background: hsl(var(--night));
+  border: 1px solid hsl(var(--line));
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+}
+.readme pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.8rem;
+}
+.readme table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  display: block;
+  overflow-x: auto;
+}
+.readme th,
+.readme td {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid hsl(var(--line));
+  vertical-align: top;
+}
+.readme th {
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(var(--muted));
+}
+.readme img {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+}
+/* A width attribute shrunk by max-width keeps its aspect ratio; a lone height attribute still applies */
+.readme img[width] {
+  height: auto;
+}
+.readme blockquote {
+  border-left: 2px solid hsl(var(--accent-400));
+  padding-left: 1rem;
+  color: hsl(var(--muted));
+}
+.readme hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--line));
+  margin: 1.5rem 0;
+}
+
+/* ── Scroll reveal ────────────────────────────────────────────────────────
+   Applied by useScrollReveal: blurred, faded and slightly low until first seen. */
+.reveal {
+  opacity: 0;
+  filter: blur(12px);
+  transform: translateY(14px);
+  transition:
+    opacity 0.8s var(--ease),
+    filter 0.8s var(--ease),
+    transform 0.8s var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+/* Revealed and settled: no transition left on the element for Framer transforms to fight */
+.reveal.reveal-done {
+  transition: none;
+}
+.reveal.is-in {
+  opacity: 1;
+  /* none, not blur(0): blur(0) would leave a filter layer on every revealed element */
+  filter: none;
+  transform: none;
+}
+/* Split text: the container only fades; its letters or words write themselves in,
+   left to right and top to bottom, each unit staggered by its index. */
+.reveal-split {
+  filter: none;
+  transform: none;
+}
+.rv-w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.rv-u {
+  display: inline-block;
+  /* Room inside each inline-block unit so descenders and accents are never cut */
+  padding: 0.08em 0.01em 0.22em;
+  margin-bottom: -0.22em;
+}
+/* At rest a unit carries no opacity, transform or transition: its .reveal block is opacity 0 until
+   .is-in, which hides it. Thousands of units each held at opacity 0 with a transform became their
+   own paint layers and made every scroll frame's hit-testing slow, even far from any text.
+   On reveal each unit plays once; the backwards fill holds it hidden and low through its delay.
+   No per-letter blur: hundreds of blur layers at once were too much for phones. */
+.reveal.is-in .rv-u {
+  animation: rv-in 0.55s var(--ease) backwards;
+  animation-delay: calc(var(--reveal-delay, 0ms) + var(--u, 0) * var(--step, 20ms));
+}
+@keyframes rv-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.18em);
+  }
+}
+/* Low-end laptops and desktops only (data-perf="low", see useLowEndDevice): text still fades in, but as
+   one block. Its letters show with it instead of each animating on its own layer, which slow laptops can't
+   keep up with. On phones and tablets, low-end mode drops only the blur below; the letters still animate. */
+@media (hover: hover) and (pointer: fine) {
+  html[data-perf="low"] .reveal .rv-u {
+    animation: none;
+  }
+}
+/* Reduced motion switched on after the text was split: letters simply show with their block.
+   !important beats the keyframes without removing them, so switching motion back on later doesn't
+   replay every letter already on the page (the "Animations off" rule below works the same way). */
+@media (prefers-reduced-motion: reduce) {
+  .reveal .rv-u {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+/* Phones and tablets: text fades up as one block, with no blur and no letter-by-letter writing.
+   Every blurred block waiting below the fold is its own filter layer, and hundreds of letters
+   animating at once as a section arrives competed with the scroll for frames, even on fast phones. */
+@media (pointer: coarse) {
+  .reveal {
+    filter: none;
+  }
+  .reveal .rv-u {
+    animation: none;
+  }
+}
+/* Phones and tablets: no frosted blur. Each blur is redrawn every frame as the page scrolls under
+   it; the nav's background is near solid anyway, so it reads the same without. */
+@media (pointer: coarse) {
+  [class*="backdrop-blur"],
+  [style*="backdrop-filter"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+/* Low-end machines: no frosted blur (the bottom glass band, the nav, the award card, overlays). Each
+   blur is redrawn every frame as the page scrolls under it, which integrated graphics can't keep up
+   with. Their tinted backgrounds stay, so they still read the same; only the blur goes. */
+html[data-perf="low"] [class*="backdrop-blur"],
+html[data-perf="low"] [style*="backdrop-filter"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Scroll-scrubbed kinetic text is set up in the component; only the reduced-motion
+   escape hatch lives here so it applies without JavaScript. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A lazy section well off screen (LazySection sets the attribute): its looping animations
+   pause until it comes back near the viewport, so unseen loops don't keep the page busy.
+   Named classes, not *: toggling the attribute then restyles only these few elements.
+   A new infinite animation belongs in this list. */
+[data-offscreen]
+  :is(.plus-pulse, .live-dot, .trophy-gloss, .clock-colon, .sparkle, .text-shine, .animate-ping, .animate-pulse),
+[data-offscreen] .live-dot::after {
+  animation-play-state: paused;
+}
+
+/* A specular band that sweeps across the glass award every few seconds */
+.trophy-gloss {
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    hsl(0 0% 100% / 0.05) 42%,
+    hsl(0 0% 100% / 0.22) 48%,
+    hsl(0 0% 100% / 0.05) 54%,
+    transparent 62%
+  );
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  animation: trophy-gloss 4.5s ease-in-out infinite;
+}
+@keyframes trophy-gloss {
+  0%,
+  55% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trophy-gloss {
+    animation: none;
+    background-position: 40% 0;
+  }
+}
+
+/* The hero's emerald orb: its slow orbit runs as a CSS animation on the compositor, so the
+   main thread does no work per frame. The path and timing match the earlier Framer orbit. */
+.hero-orb {
+  will-change: transform;
+  animation: hero-orb 20s linear infinite;
+}
+@keyframes hero-orb {
+  0% {
+    transform: translate(-48vw, 0vh);
+  }
+  7.27% {
+    transform: translate(-47.48vw, -3.13vh);
+  }
+  13.93% {
+    transform: translate(-45.95vw, -6.16vh);
+  }
+  19.67% {
+    transform: translate(-43.44vw, -9vh);
+  }
+  24.44% {
+    transform: translate(-40.05vw, -11.57vh);
+  }
+  28.35% {
+    transform: translate(-35.85vw, -13.79vh);
+  }
+  31.57% {
+    transform: translate(-31vw, -15.59vh);
+  }
+  34.26% {
+    transform: translate(-25.63vw, -16.91vh);
+  }
+  36.54% {
+    transform: translate(-19.9vw, -17.73vh);
+  }
+  38.51% {
+    transform: translate(-14vw, -18vh);
+  }
+  40.23% {
+    transform: translate(-8.1vw, -17.73vh);
+  }
+  41.77% {
+    transform: translate(-2.37vw, -16.91vh);
+  }
+  43.17% {
+    transform: translate(3vw, -15.59vh);
+  }
+  44.45% {
+    transform: translate(7.85vw, -13.79vh);
+  }
+  45.65% {
+    transform: translate(12.05vw, -11.57vh);
+  }
+  46.79% {
+    transform: translate(15.44vw, -9vh);
+  }
+  47.88% {
+    transform: translate(17.95vw, -6.16vh);
+  }
+  48.95% {
+    transform: translate(19.48vw, -3.13vh);
+  }
+  50% {
+    transform: translate(20vw, 0vh);
+  }
+  51.05% {
+    transform: translate(19.48vw, 3.13vh);
+  }
+  52.12% {
+    transform: translate(17.95vw, 6.16vh);
+  }
+  53.21% {
+    transform: translate(15.44vw, 9vh);
+  }
+  54.35% {
+    transform: translate(12.05vw, 11.57vh);
+  }
+  55.55% {
+    transform: translate(7.85vw, 13.79vh);
+  }
+  56.83% {
+    transform: translate(3vw, 15.59vh);
+  }
+  58.23% {
+    transform: translate(-2.37vw, 16.91vh);
+  }
+  59.77% {
+    transform: translate(-8.1vw, 17.73vh);
+  }
+  61.49% {
+    transform: translate(-14vw, 18vh);
+  }
+  63.46% {
+    transform: translate(-19.9vw, 17.73vh);
+  }
+  65.74% {
+    transform: translate(-25.63vw, 16.91vh);
+  }
+  68.43% {
+    transform: translate(-31vw, 15.59vh);
+  }
+  71.65% {
+    transform: translate(-35.85vw, 13.79vh);
+  }
+  75.56% {
+    transform: translate(-40.05vw, 11.57vh);
+  }
+  80.33% {
+    transform: translate(-43.44vw, 9vh);
+  }
+  86.07% {
+    transform: translate(-45.95vw, 6.16vh);
+  }
+  92.73% {
+    transform: translate(-47.48vw, 3.13vh);
+  }
+  100% {
+    transform: translate(-48vw, 0vh);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb {
+    animation: none;
+  }
+}
+
+/* Film grain: one tiny pre-rendered tile, repeated. Cheaper than a live SVG filter over the whole element. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Film grain over the whole page, after patrickjane.framer.website: a still, tiled noise
+   texture at low opacity, above everything and never in the way of a click */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 154px 154px;
+  opacity: 0.1;
+}
+@media print {
+  .film-grain {
+    display: none;
+  }
+}
+
+/* The footer's "Animations off" switch: the same stillness the OS setting gives */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion="off"] .hero-orb {
+  animation: none !important;
+}
+html[data-motion="off"] .reveal,
+html[data-motion="off"] .reveal .rv-u {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+/* About bento: the pointer's emerald spotlight. The grid sets --spot-o; each card gets its own
+   --mx/--my so one light spills across neighbouring borders. Mouse only. */
+.spot::before,
+.spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--spot-o, 0);
+  transition: opacity 0.4s ease;
+}
+.spot::before {
+  z-index: 3;
+  padding: 1px;
+  background: radial-gradient(
+    280px circle at var(--mx, -999px) var(--my, -999px),
+    hsl(158 64% 52% / 0.75),
+    transparent 70%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.spot::after {
+  z-index: 0;
+  background: radial-gradient(
+    420px circle at var(--mx, -999px) var(--my, -999px),
+    hsl(158 64% 52% / 0.07),
+    transparent 65%
+  );
+}
+.spot-light::after {
+  background: radial-gradient(
+    420px circle at var(--mx, -999px) var(--my, -999px),
+    hsl(158 64% 40% / 0.12),
+    transparent 65%
+  );
+}
+@media (hover: hover) and (pointer: fine) {
+  .spot {
+    transition: translate 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .spot:hover {
+    translate: 0 -4px;
+  }
+}
+
+/* Local time: the colon ticks like a clock */
+@keyframes clock-colon {
+  50% {
+    opacity: 0.2;
+  }
+}
+.clock-colon {
+  animation: clock-colon 1s steps(1) infinite;
+}
+
+/* Award: four-point sparkles round the trophy, each twinkling on its own beat */
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  30% {
+    opacity: 0;
+    transform: scale(0.3) rotate(90deg);
+  }
+}
+.sparkle {
+  opacity: 0;
+  background: currentColor;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  filter: drop-shadow(0 0 4px hsl(158 64% 52% / 0.9));
+  animation: sparkle 3.6s ease-in-out infinite;
+}
+
+/* Record: a light that passes across "Award" every few seconds */
+@keyframes text-shine {
+  0%,
+  60% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+.text-shine {
+  color: hsl(158 64% 52%);
+  background: linear-gradient(100deg, hsl(158 64% 52%) 40%, hsl(150 80% 85%) 50%, hsl(158 64% 52%) 60%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shine 5s ease-in-out infinite;
+}
+
+/* Contact: a detail switching on like a fluorescent tube */
+@keyframes flicker-on {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  12% {
+    opacity: 0.1;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  24% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.4;
+  }
+  52%,
+  100% {
+    opacity: 1;
+  }
+}
+.flicker-on {
+  animation: flicker-on 0.9s linear both;
+}
