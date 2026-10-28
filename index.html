@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/webp" sizes="64x64" href="/images/favicon-64.webp" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="canonical" href="%SITE_URL%" />
+
+<!-- Primary Meta Tags -->
+<title data-rh="true">Yumin Chen | Software Engineer | AI Engineer</title>
+<meta name="title" data-rh="true" content="Yumin Chen | Software Engineer | AI Engineer" />
+<meta name="description" data-rh="true"
+  content="Yumin Chen, Software Engineer and AI Engineer: model deployment and optimization, LLM applications, RAG, and AI agents, with Python, C++, PyTorch, and CUDA." />
+<meta name="author" content="Yumin Chen" />
+<meta name="theme-color" content="#000000" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" data-rh="true" content="website" />
+<meta property="og:url" data-rh="true" content="%SITE_URL%" />
+<meta property="og:title" data-rh="true" content="Yumin Chen | Software Engineer | AI Engineer" />
+<meta property="og:description" data-rh="true"
+  content="30+ perception models deployed on in-vehicle AI chips, a RAG assistant used by 600+ engineers, and telecom AI over two billion records a day." />
+<meta property="og:site_name" content="Yumin Chen" />
+<meta property="og:image" data-rh="true" content="%SITE_URL%og-image.jpg?v=2" />
+
+<!-- Twitter -->
+<meta name="twitter:card" data-rh="true" content="summary_large_image" />
+<meta name="twitter:url" data-rh="true" content="%SITE_URL%" />
+<meta name="twitter:title" data-rh="true" content="Yumin Chen | Software Engineer | AI Engineer" />
+<meta name="twitter:description" data-rh="true"
+  content="30+ perception models deployed on in-vehicle AI chips, a RAG assistant used by 600+ engineers, and telecom AI over two billion records a day." />
+<meta name="twitter:image" data-rh="true" content="%SITE_URL%og-image.jpg?v=2" />
+
+<!-- Structured data for search engines (visible without JavaScript) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "%SITE_URL%#person",
+      "name": "Yumin Chen",
+      "url": "%SITE_URL%",
+      "jobTitle": "Software Engineer",
+      "description": "Software Engineer and AI Engineer building backend services, machine learning systems, LLM applications, and data pipelines across autonomous-driving AI, telecommunications, and semiconductor manufacturing.",
+      "address": { "@type": "PostalAddress", "addressLocality": "Wuhan", "addressCountry": "CN" },
+      "alumniOf": { "@type": "CollegeOrUniversity", "name": "Huazhong University of Science and Technology Wuchang Branch" },
+      "sameAs": ["https://github.com/devsmilegod", "https://www.linkedin.com/in/yumin-chen-64b340447/"],
+      "knowsAbout": ["Python", "C++", "Go", "Java", "PyTorch", "CUDA", "INT8 quantization", "LLM applications", "RAG", "AI agents", "vLLM", "Kubernetes", "Kafka", "Flink", "Apache Spark", "MLflow"]
+    },
+    {
+      "@type": "WebSite",
+      "name": "Yumin Chen | Software Engineer",
+      "url": "%SITE_URL%",
+      "author": { "@id": "%SITE_URL%#person" }
+    }
+  ]
+}
+</script>
+
+<!-- Fonts are self-hosted (src/assets/fonts.css). Antonio is preloaded: the splash's words are set in it,
+     so they paint in the right face from the first frame. The rest load as text needs them. -->
+<link rel="preload" href="/src/assets/fonts/antonio-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- The hero photo is the first screen's main image, but it is only requested once the page's script
+     has built the hero; preloading starts it with the page, so it is in by the time the splash lifts. -->
+<link rel="preload" href="/images/avatar-cutout.webp" as="image" type="image/webp" fetchpriority="high">
+
+<style>
+  /* Critical CSS — inlined to unblock FCP */
+  body {
+    background-color: #000;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Shell loader — visible until React hydrates */
+  #app-shell-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .shell-mark {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+      radial-gradient(circle at center, rgba(16, 185, 129, 0.28), transparent 58%),
+      rgba(255, 255, 255, 0.02);
+    box-shadow:
+      0 0 30px rgba(16, 185, 129, 0.12),
+      inset 0 0 24px rgba(255, 255, 255, 0.03);
+    animation: shell-pulse 1.2s ease-in-out infinite alternate;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes shell-pulse {
+    from {
+      transform: scale(0.96);
+      opacity: 0.7;
+    }
+
+    to {
+      transform: scale(1.04);
+      opacity: 1;
+    }
+  }
+</style>
+</head>
+
+<body>
+  <div id="root">
+    <div id="app-shell-loader">
+      <div class="shell-mark" aria-hidden="true"></div>
+      <span class="sr-only">Loading portfolio</span>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
+
