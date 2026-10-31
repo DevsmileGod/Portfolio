@@ -29,7 +29,7 @@ export const PROFILE = {
   title: "Software Engineer",
   /** The second half of the hero's label: "Software Engineer · AI Engineer" */
   focus: "AI Engineer",
-  email: "yuminchennas@gmail.com",
+  email: "yuminchenes@gmail.com",
   /** Under public/, relative to BASE_URL */
   resume: "yumin-chen-resume.pdf",
   resumeDownloadName: "yumin-chen-resume.pdf",
@@ -51,7 +51,7 @@ export const PROFILE = {
   links: {
     github: GITHUB_USER ? `https://github.com/${GITHUB_USER}` : "",
     /** Your full LinkedIn URL, e.g. "https://www.linkedin.com/in/your-handle" */
-    linkedin: "https://www.linkedin.com/in/yumin-chen-64b340447/",
+    linkedin: "https://www.linkedin.com/in/yumin-chen-a8a242448/",
   },
   /** How I think: three principles */
   principles: [
